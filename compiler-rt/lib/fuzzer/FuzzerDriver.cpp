@@ -770,8 +770,6 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   Options.PrintCorpusStats = Flags.print_corpus_stats;
   Options.PrintCoverage = Flags.print_coverage;
   Options.PrintFullCoverage = Flags.print_full_coverage;
-  Options.PrintStatefulCoverage = Flags.print_stateful_coverage;
-  Options.PrintFullStatefulCoverage = Flags.print_full_stateful_coverage;
   if (Flags.exit_on_src_pos)
     Options.ExitOnSrcPos = Flags.exit_on_src_pos;
   if (Flags.exit_on_item)

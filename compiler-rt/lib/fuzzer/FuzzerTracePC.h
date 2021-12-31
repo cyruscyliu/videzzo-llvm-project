@@ -14,7 +14,6 @@
 #include "FuzzerDefs.h"
 #include "FuzzerDictionary.h"
 #include "FuzzerValueBitMap.h"
-#include "FuzzerStateTable.h"
 
 #include <set>
 #include <unordered_map>
@@ -85,7 +84,6 @@ class TracePC {
 
   void ResetMaps() {
     ValueProfileMap.Reset();
-    StateCounters.Reset();
     ClearExtraCounters();
     ClearInlineCounters();
   }
@@ -98,7 +96,6 @@ class TracePC {
   void PrintModuleInfo();
 
   void PrintCoverage(bool PrintAllCounters);
-  void PrintStatefulCoverage(bool PrintAllCounters);
 
   template<class CallBack>
   void IterateCoveredFunctions(CallBack CB);
@@ -179,7 +176,6 @@ private:
   uint8_t *FocusFunctionCounterPtr = nullptr;
 
   ValueBitMap ValueProfileMap;
-  StateTable StateCounters;
   uintptr_t InitialStack;
 };
 
@@ -272,11 +268,6 @@ void TracePC::CollectFeatures(Callback HandleFeature) const {
     });
     FirstFeature += ValueProfileMap.SizeInBits();
   }
-
-  StateCounters.ForEachNonZeroByte([&](size_t Idx, size_t Counter) {
-    Handle8bitCounter(FirstFeature, Idx, Counter);
-  });
-  FirstFeature += StateCounters.SizeInBytes();
 
   // Step function, grows similar to 8 * Log_2(A).
   auto StackDepthStepFunction = [](uint32_t A) -> uint32_t {
