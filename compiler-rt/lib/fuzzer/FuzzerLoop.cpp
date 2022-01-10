@@ -500,7 +500,7 @@ static void WriteEdgeToMutationGraphFile(const std::string &MutationGraphFile,
   AppendToFile(OutputString, MutationGraphFile);
 }
 
-bool Fuzzer::RunOne(const uint8_t *Data, size_t Size, bool MayDeleteFile,
+bool Fuzzer::RunOne(uint8_t *Data, size_t Size, bool MayDeleteFile,
                     InputInfo *II, bool ForceAddToCorpus,
                     bool *FoundUniqFeatures) {
   if (!Size)
@@ -569,23 +569,14 @@ void Fuzzer::CrashOnOverwrittenData() {
   _Exit(Options.ErrorExitCode); // Stop right now.
 }
 
-// Compare two arrays, but not all bytes if the arrays are large.
-static bool LooseMemeq(const uint8_t *A, const uint8_t *B, size_t Size) {
-  const size_t Limit = 64;
-  if (Size <= 64)
-    return !memcmp(A, B, Size);
-  // Compare first and last Limit/2 bytes.
-  return !memcmp(A, B, Limit / 2) &&
-         !memcmp(A + Size - Limit / 2, B + Size - Limit / 2, Limit / 2);
-}
-
-void Fuzzer::ExecuteCallback(const uint8_t *Data, size_t Size) {
+void Fuzzer::ExecuteCallback(uint8_t *Data, size_t Size) {
   TPC.RecordInitialStack();
   TotalNumberOfRuns++;
   assert(InFuzzingThread());
   // We copy the contents of Unit into a separate heap buffer
   // so that we reliably find buffer overflows in it.
-  uint8_t *DataCopy = new uint8_t[Size];
+  // TODO: videzzo breaks this assumption; let's assuse it's 4096
+  uint8_t *DataCopy = new uint8_t[4096];
   memcpy(DataCopy, Data, Size);
   if (EF->__msan_unpoison)
     EF->__msan_unpoison(DataCopy, Size);
@@ -594,21 +585,22 @@ void Fuzzer::ExecuteCallback(const uint8_t *Data, size_t Size) {
   if (CurrentUnitData && CurrentUnitData != Data)
     memcpy(CurrentUnitData, Data, Size);
   CurrentUnitSize = Size;
+  size_t NewSize;
   {
     ScopedEnableMsanInterceptorChecks S;
     AllocTracer.Start(Options.TraceMalloc);
     UnitStartTime = system_clock::now();
     TPC.ResetMaps();
     RunningUserCallback = true;
-    int Res = CB(DataCopy, Size);
+    NewSize = (size_t)CB(DataCopy, Size);
     RunningUserCallback = false;
     UnitStopTime = system_clock::now();
-    (void)Res;
-    assert(Res == 0);
     HasMoreMallocsThanFrees = AllocTracer.Stop();
   }
-  if (!LooseMemeq(DataCopy, Data, Size))
-    CrashOnOverwrittenData();
+  if (NewSize != 1 && NewSize > Size) {
+    // we only append events, so
+    memcpy(Data, DataCopy, NewSize);
+  }
   CurrentUnitSize = 0;
   delete[] DataCopy;
 }
@@ -670,7 +662,7 @@ void Fuzzer::ReportNewCoverage(InputInfo *II, const Unit &U) {
 
 // Tries detecting a memory leak on the particular input that we have just
 // executed before calling this function.
-void Fuzzer::TryDetectingAMemoryLeak(const uint8_t *Data, size_t Size,
+void Fuzzer::TryDetectingAMemoryLeak(uint8_t *Data, size_t Size,
                                      bool DuringInitialCorpusExecution) {
   if (!HasMoreMallocsThanFrees)
     return; // mallocs==frees, a leak is unlikely.

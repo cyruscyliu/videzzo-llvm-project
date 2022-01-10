@@ -14,7 +14,7 @@
 // oner per line, e.g.
 // ==> functions.txt <==
 // Func2
-// LLVMFuzzerTestOneInput
+// __LLVMFuzzerTestOneInput
 // Func1
 //
 // All other files in the dir are the traces, see dataflow/DataFlow.cpp.

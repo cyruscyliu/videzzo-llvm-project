@@ -60,7 +60,7 @@ using Set = std::set<T, std::less<T>, fuzzer_allocator<T>>;
 
 typedef Vector<uint8_t> Unit;
 typedef Vector<Unit> UnitVector;
-typedef int (*UserCallback)(const uint8_t *Data, size_t Size);
+typedef int (*UserCallback)(uint8_t *Data, size_t Size);
 
 int FuzzerDriver(int *argc, char ***argv, UserCallback Callback);
 

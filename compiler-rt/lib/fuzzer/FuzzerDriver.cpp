@@ -940,7 +940,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
 
 extern "C" ATTRIBUTE_INTERFACE int
 LLVMFuzzerRunDriver(int *argc, char ***argv,
-                    int (*UserCb)(const uint8_t *Data, size_t Size)) {
+                    int (*UserCb)(uint8_t *Data, size_t Size)) {
   return FuzzerDriver(argc, argv, UserCb);
 }
 

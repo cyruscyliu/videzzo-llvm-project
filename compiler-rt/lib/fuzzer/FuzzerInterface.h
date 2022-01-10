@@ -11,7 +11,7 @@
 // NOTE: the libFuzzer interface is thin and in the majority of cases
 // you should not include this file into your target. In 95% of cases
 // all you need is to define the following function in your file:
-// extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
+// extern "C" size_t __LLVMFuzzerTestOneInput(uint8_t *Data, size_t Size);
 
 // WARNING: keep the interface in C.
 
@@ -36,9 +36,9 @@ extern "C" {
 // Mandatory user-provided target function.
 // Executes the code under test with [Data, Data+Size) as the input.
 // libFuzzer will invoke this function *many* times with different inputs.
-// Must return 0.
+// Will return the new size of Data.
 FUZZER_INTERFACE_VISIBILITY int
-LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size);
+__LLVMFuzzerTestOneInput(uint8_t *Data, size_t Size);
 
 // Optional user-provided initialization function.
 // If provided, this function will be called by libFuzzer once at startup.

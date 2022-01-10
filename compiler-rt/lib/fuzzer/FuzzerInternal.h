@@ -65,8 +65,8 @@ public:
   static void StaticFileSizeExceedCallback();
   static void StaticGracefulExitCallback();
 
-  void ExecuteCallback(const uint8_t *Data, size_t Size);
-  bool RunOne(const uint8_t *Data, size_t Size, bool MayDeleteFile = false,
+  void ExecuteCallback(uint8_t *Data, size_t Size);
+  bool RunOne(uint8_t *Data, size_t Size, bool MayDeleteFile = false,
               InputInfo *II = nullptr, bool ForceAddToCorpus = false,
               bool *FoundUniqFeatures = nullptr);
   void TPCUpdateObservedPCs();
@@ -82,7 +82,7 @@ public:
 
   bool InFuzzingThread() const { return IsMyThread; }
   size_t GetCurrentUnitInFuzzingThead(const uint8_t **Data) const;
-  void TryDetectingAMemoryLeak(const uint8_t *Data, size_t Size,
+  void TryDetectingAMemoryLeak(uint8_t *Data, size_t Size,
                                bool DuringInitialCorpusExecution);
 
   void HandleMalloc(size_t Size);
