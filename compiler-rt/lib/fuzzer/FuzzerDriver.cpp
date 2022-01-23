@@ -865,8 +865,10 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   if (Flags.cleanse_crash)
     return CleanseCrashInput(Args, Options);
 
+  EF->enable_group_mutator_miss();
   if (RunIndividualFiles) {
     Options.SaveArtifacts = false;
+    EF->disable_group_mutator_miss();
     int Runs = std::max(1, Flags.runs);
     Printf("%s: Running %zd inputs %d time(s) each.\n", ProgName->c_str(),
            Inputs->size(), Runs);
