@@ -860,6 +860,10 @@ void EmitAssemblyHelper::CreatePasses(legacy::PassManager &MPM,
 
   PMBuilder.populateFunctionPassManager(FPM);
   PMBuilder.populateModulePassManager(MPM);
+
+  if (!CodeGenOpts.ViDeZZoInstrumentationCallstack.empty()) {
+    MPM.add(createViDeZZoInstrumentationPass());
+  }
 }
 
 static void setCommandLineOpts(const CodeGenOptions &CodeGenOpts) {

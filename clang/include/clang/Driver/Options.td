@@ -1437,6 +1437,9 @@ def fmemory_profile_EQ : Joined<["-"], "fmemory-profile=">,
     Group<f_Group>, Flags<[CC1Option]>, MetaVarName<"<directory>">,
     HelpText<"Enable heap memory profiling and dump results into <directory>">;
 
+def videzzo_instrumentation : Joined<["-", "--"], "videzzo-instrumentation=">, Flags<[CC1Option]>,
+    HelpText<"Instrumentation for ViDeZZo">;
+
 // Begin sanitizer flags. These should all be core options exposed in all driver
 // modes.
 let Flags = [CC1Option, CoreOption] in {

@@ -27,7 +27,8 @@ struct ViDeZZoInstrumentationLegacyPass: public FunctionPass {
   }
 
   bool runOnFunction(Function &F) override {
-      return true;
+      printf("you find me!\n");
+      return false;
   }
 };
 

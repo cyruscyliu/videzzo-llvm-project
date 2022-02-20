@@ -410,6 +410,9 @@ public:
   /// If threshold option is not specified, it is disabled by default.
   Optional<uint64_t> DiagnosticsHotnessThreshold = 0;
 
+  /// Callstack for ViDeZZo's instrumentation.
+  std::string ViDeZZoInstrumentationCallstack;
+
 public:
   // Define accessors/mutators for code generation options of enumeration type.
 #define CODEGENOPT(Name, Bits, Default)
