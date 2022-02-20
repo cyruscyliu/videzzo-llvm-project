@@ -49,6 +49,7 @@ add_llvm_component_library(LLVMTransformUtils
   LowerSwitch.cpp
   MatrixUtils.cpp
   Mem2Reg.cpp
+  ViDeZZoInstrumentation.cpp
   MetaRenamer.cpp
   ModuleUtils.cpp
   NameAnonGlobals.cpp

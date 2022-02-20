@@ -106,6 +106,12 @@ FunctionPass *createPromoteMemoryToRegisterPass();
 
 //===----------------------------------------------------------------------===//
 //
+// ViDeZZoInstrumentation - This pass instruments functions requried by ViDeZZo
+//
+FunctionPass *createViDeZZoInstrumentationPass();
+
+//===----------------------------------------------------------------------===//
+//
 // LoopSimplify - Insert Pre-header blocks into the CFG for every function in
 // the module.  This pass updates dominator information, loop information, and
 // does not add critical edges to the CFG.

@@ -151,6 +151,7 @@ namespace {
       (void) llvm::createObjCARCOptPass();
       (void) llvm::createPAEvalPass();
       (void) llvm::createPromoteMemoryToRegisterPass();
+      (void) llvm::createViDeZZoInstrumentationPass();
       (void) llvm::createDemoteRegisterToMemoryPass();
       (void) llvm::createPruneEHPass();
       (void) llvm::createPostDomOnlyPrinterPass();
