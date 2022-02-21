@@ -1952,10 +1952,6 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
   else if (Args.hasArg(options::OPT_fno_finite_loops))
     Opts.FiniteLoops = CodeGenOptions::FiniteLoopsKind::Never;
 
-  for (const auto &Arg : Args.getAllArgValues(OPT_videzzo_instrumentation)) {
-      Opts.ViDeZZoInstrumentationCallstack = Arg;
-  }
-
   return Success && Diags.getNumErrors() == NumErrorsBefore;
 }
 

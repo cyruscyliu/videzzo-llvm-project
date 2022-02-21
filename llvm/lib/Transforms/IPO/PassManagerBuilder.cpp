@@ -320,7 +320,6 @@ void PassManagerBuilder::populateFunctionPassManager(
   FPM.add(createSROAPass());
   FPM.add(createEarlyCSEPass());
   FPM.add(createLowerExpectIntrinsicPass());
-  FPM.add(createViDeZZoInstrumentationPass());
 }
 
 // Do PGO instrumentation generation or use pass as the option specified.

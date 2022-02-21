@@ -1438,7 +1438,8 @@ def fmemory_profile_EQ : Joined<["-"], "fmemory-profile=">,
     HelpText<"Enable heap memory profiling and dump results into <directory>">;
 
 def videzzo_instrumentation : Joined<["-", "--"], "videzzo-instrumentation=">, Flags<[CC1Option]>,
-    HelpText<"Instrumentation for ViDeZZo">;
+    HelpText<"Instrumentation for ViDeZZo">,
+    MarshallingInfoString<CodeGenOpts<"ViDeZZoInstrumentationCallstack">>;
 
 // Begin sanitizer flags. These should all be core options exposed in all driver
 // modes.

@@ -21,13 +21,15 @@ namespace {
 
 struct ViDeZZoInstrumentationLegacyPass: public FunctionPass {
   static char ID;
+  std::string ViDeZZoInstrumentationCallstack;
 
-  ViDeZZoInstrumentationLegacyPass() : FunctionPass(ID) {
+  ViDeZZoInstrumentationLegacyPass(std::string ViDeZZoInstrumentationCallstack = "")
+      : FunctionPass(ID), ViDeZZoInstrumentationCallstack(ViDeZZoInstrumentationCallstack) {
     initializeViDeZZoInstrumentationLegacyPassPass(*PassRegistry::getPassRegistry());
   }
 
   bool runOnFunction(Function &F) override {
-      printf("you find me!\n");
+      printf("you find me!: %s\n", ViDeZZoInstrumentationCallstack.c_str());
       return false;
   }
 };
@@ -45,6 +47,6 @@ INITIALIZE_PASS_END(ViDeZZoInstrumentationLegacyPass,
                     false, false)
 
 // createViDeZZoInstrumentation - Provide an entry point to create this pass.
-FunctionPass *llvm::createViDeZZoInstrumentationPass() {
-  return new ViDeZZoInstrumentationLegacyPass();
+FunctionPass *llvm::createViDeZZoInstrumentationPass(StringRef ViDeZZoInstrumentationCallstack) {
+  return new ViDeZZoInstrumentationLegacyPass(std:: string(ViDeZZoInstrumentationCallstack));
 }

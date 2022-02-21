@@ -859,11 +859,11 @@ void EmitAssemblyHelper::CreatePasses(legacy::PassManager &MPM,
     PMBuilder.PGOSampleUse = CodeGenOpts.SampleProfileFile;
 
   PMBuilder.populateFunctionPassManager(FPM);
-  PMBuilder.populateModulePassManager(MPM);
-
+  // MUST enable -flegacy-pass-manager
   if (!CodeGenOpts.ViDeZZoInstrumentationCallstack.empty()) {
-    MPM.add(createViDeZZoInstrumentationPass());
+    MPM.add(createViDeZZoInstrumentationPass(CodeGenOpts.ViDeZZoInstrumentationCallstack));
   }
+  PMBuilder.populateModulePassManager(MPM);
 }
 
 static void setCommandLineOpts(const CodeGenOptions &CodeGenOpts) {
