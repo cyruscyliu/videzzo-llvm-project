@@ -110,7 +110,7 @@ FunctionPass *createPromoteMemoryToRegisterPass();
 //
 // ViDeZZoInstrumentation - This pass instruments functions requried by ViDeZZo
 //
-FunctionPass *createViDeZZoInstrumentationPass(StringRef ViDeZZoInstrumentationCallstack = StringRef(""));
+ModulePass *createViDeZZoInstrumentationPass(StringRef ViDeZZoInstrumentationCallstack = StringRef(""));
 
 //===----------------------------------------------------------------------===//
 //

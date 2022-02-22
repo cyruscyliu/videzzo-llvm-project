@@ -5230,9 +5230,13 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (const Arg *A = Args.getLastArg(options::OPT_videzzo_instrumentation)) {
-      StringRef path_to_instrumentation_list = A->getValue();
+    StringRef path_to_instrumentation_list = A->getValue();
+    if (!llvm::sys::fs::exists(path_to_instrumentation_list))
+      D.Diag(diag::err_drv_no_such_file) << path_to_instrumentation_list;
+    else {
       CmdArgs.push_back(Args.MakeArgString("-videzzo-instrumentation=" + path_to_instrumentation_list));
       A->claim();
+    }
   }
 
   // Warn about ignored options to clang.
