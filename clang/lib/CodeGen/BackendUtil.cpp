@@ -84,6 +84,7 @@
 #include "llvm/Transforms/Utils/EntryExitInstrumenter.h"
 #include "llvm/Transforms/Utils/NameAnonGlobals.h"
 #include "llvm/Transforms/Utils/SymbolRewriter.h"
+#include "llvm/Transforms/Utils/ViDeZZoInstrumentation.h"
 #include <memory>
 using namespace clang;
 using namespace llvm;
@@ -861,7 +862,21 @@ void EmitAssemblyHelper::CreatePasses(legacy::PassManager &MPM,
   PMBuilder.populateFunctionPassManager(FPM);
   // MUST enable -flegacy-pass-manager
   if (!CodeGenOpts.ViDeZZoInstrumentationCallstack.empty()) {
-    MPM.add(createViDeZZoInstrumentationPass(CodeGenOpts.ViDeZZoInstrumentationCallstack));
+    InstrumentationPointList instrumentation_point_list;
+    // Load the YAML file once
+    auto error_or_file = MemoryBuffer::getFile(CodeGenOpts.ViDeZZoInstrumentationCallstack);
+    if (auto err = error_or_file.getError()) {
+      report_fatal_error("Failed to open files");
+    }
+
+    yaml::Input yin((*error_or_file)->getBuffer());
+    yin >> instrumentation_point_list;
+    if (yin.error()) {
+      report_fatal_error("Failed to deserialize yaml text");
+    }
+    errs() << "[+] Load " << instrumentation_point_list.size() << " instrumentation point(s)" << "\n";
+
+    MPM.add(createViDeZZoInstrumentationPass(instrumentation_point_list));
   }
   PMBuilder.populateModulePassManager(MPM);
 }

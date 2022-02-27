@@ -15,6 +15,7 @@
 #define LLVM_TRANSFORMS_UTILS_H
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Transforms/Utils/ViDeZZoInstrumentation.h"
 
 namespace llvm {
 
@@ -108,9 +109,9 @@ FunctionPass *createPromoteMemoryToRegisterPass();
 
 //===----------------------------------------------------------------------===//
 //
-// ViDeZZoInstrumentation - This pass instruments functions requried by ViDeZZo
+// ViDeZZoInstrumentation - This pass instruments functions required by ViDeZZo
 //
-ModulePass *createViDeZZoInstrumentationPass(StringRef ViDeZZoInstrumentationCallstack = StringRef(""));
+ModulePass *createViDeZZoInstrumentationPass(InstrumentationPointList instrumentation_point_list = {});
 
 //===----------------------------------------------------------------------===//
 //

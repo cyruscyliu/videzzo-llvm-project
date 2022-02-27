@@ -10,47 +10,18 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Transforms/Utils/ViDeZZoInstrumentation.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Transforms/Utils.h"
-#include "llvm/Support/YAMLTraits.h"
 #include "llvm/Support/Path.h"
 #include "llvm/IR/Module.h"
-#include "llvm/IR/Instructions.h"
 #include "llvm/IR/IRBuilder.h"
 #include <iostream>
 
 using namespace llvm;
-
-//
-// callstack
-// OTHER_CONTEXT, PARENT_FUNCTION, TARGET_FUNCTION, TARGET_FUNCTION_INDEX, ADDR_ARGUMENT_INDEX
-//
-#define POS_PARENT_FUNCTION             (-4)
-#define POS_TARGET_FUNCTION             (-3)
-#define POS_TARGET_FUNCTION_INDEX       (-2)
-#define POS_ADDR_ARGUMENT_INDEX         (-1)
-
-typedef struct InstrumentationPoint {
-  std::string filename;
-  std::vector<std::string> callstack;
-  int id;
-  Instruction *inst;
-} InstrumentationPoint;
-
-template <>
-struct yaml::MappingTraits<InstrumentationPoint> {
-  static void mapping(yaml::IO &io, InstrumentationPoint &instrumentation_point) {
-    io.mapRequired("filename",  instrumentation_point.filename);
-    io.mapRequired("callstack", instrumentation_point.callstack);
-    io.mapRequired("id",        instrumentation_point.id);
-  }
-};
-
-typedef std::vector<InstrumentationPoint> InstrumentationPointList;
-LLVM_YAML_IS_SEQUENCE_VECTOR(InstrumentationPoint)
 
 const char ViDeZZoGroupMutatorMissName[] = "GroupMutatorMiss";
 
@@ -58,26 +29,12 @@ namespace {
 
 struct ViDeZZoInstrumentationLegacyPass: public ModulePass {
   static char ID;
-  std::string ViDeZZoInstrumentationCallstack;
   InstrumentationPointList instrumentation_point_list;
 
   bool callstack_initialized;
 
-  ViDeZZoInstrumentationLegacyPass(std::string ViDeZZoInstrumentationCallstack = "")
-      : ModulePass(ID), ViDeZZoInstrumentationCallstack(ViDeZZoInstrumentationCallstack) {
-    // Load the YAML file once
-    auto error_or_file = MemoryBuffer::getFile(ViDeZZoInstrumentationCallstack);
-    if (auto err = error_or_file.getError()) {
-      report_fatal_error("Failed to open files");
-    }
-
-    yaml::Input yin((*error_or_file)->getBuffer());
-    yin >> instrumentation_point_list;
-    if (yin.error()) {
-      report_fatal_error("Failed to deserialize yaml text");
-    }
-    errs() << "[+] Load " << instrumentation_point_list.size() << " instrumentation point(s)" << "\n";
-
+  ViDeZZoInstrumentationLegacyPass(InstrumentationPointList instrumentation_point_list = {})
+      : ModulePass(ID), instrumentation_point_list(instrumentation_point_list) {
     initializeViDeZZoInstrumentationLegacyPassPass(*PassRegistry::getPassRegistry());
   }
 
@@ -189,6 +146,6 @@ INITIALIZE_PASS_END(ViDeZZoInstrumentationLegacyPass,
                     false, false)
 
 // createViDeZZoInstrumentation - Provide an entry point to create this pass.
-ModulePass *llvm::createViDeZZoInstrumentationPass(StringRef ViDeZZoInstrumentationCallstack) {
-  return new ViDeZZoInstrumentationLegacyPass(std:: string(ViDeZZoInstrumentationCallstack));
+ModulePass *llvm::createViDeZZoInstrumentationPass(InstrumentationPointList instrumentation_point_list) {
+  return new ViDeZZoInstrumentationLegacyPass(instrumentation_point_list);
 }
