@@ -24,6 +24,7 @@
 using namespace llvm;
 
 const char ViDeZZoGroupMutatorMissName[] = "GroupMutatorMiss";
+const char ViDeZZoAroundInvalidAddressName[] = "AroundInvalidAddress";
 
 namespace {
 
@@ -44,7 +45,9 @@ struct ViDeZZoInstrumentationLegacyPass: public ModulePass {
 
     // What to instrument
     FunctionCallee ViDeZZoGroupMutatorMiss = M.getOrInsertFunction(
-      ViDeZZoGroupMutatorMissName, Type::getVoidTy(*C), GlobalIRB.getInt8Ty(), GlobalIRB.getInt64Ty());
+      ViDeZZoGroupMutatorMissName, /*ret=*/Type::getVoidTy(*C), GlobalIRB.getInt8Ty(), GlobalIRB.getInt64Ty());
+    FunctionCallee ViDeZZoAroundInvalidAddress = M.getOrInsertFunction(
+      ViDeZZoAroundInvalidAddressName, /*ret=*/GlobalIRB.getInt64Ty(), GlobalIRB.getInt64Ty());
 
     // Where to instrument
     bool instrumented = false;
@@ -122,9 +125,16 @@ struct ViDeZZoInstrumentationLegacyPass: public ModulePass {
         Value *GroupMutatorMissId = IRB.getInt8(ip.id);
         Value *GroupMutatorMissAddr = dyn_cast<CallInst>(ip.inst)->getArgOperand(
           std::stoi(ip.callstack[ip.callstack.size() + POS_ADDR_ARGUMENT_INDEX]));
+
+        Value *AroundInvalidAddressRet = IRB.CreateCall(ViDeZZoAroundInvalidAddress, {
+          IRB.CreateIntCast(GroupMutatorMissAddr, IRB.getInt64Ty(), false)});
         IRB.CreateCall(ViDeZZoGroupMutatorMiss, {
           IRB.CreateIntCast(GroupMutatorMissId, IRB.getInt8Ty(), false),
-          IRB.CreateIntCast(GroupMutatorMissAddr, IRB.getInt64Ty(), false)});
+          IRB.CreateIntCast(AroundInvalidAddressRet, IRB.getInt64Ty(), false)});
+        dyn_cast<CallInst>(ip.inst)->setArgOperand(
+          std::stoi(ip.callstack[ip.callstack.size() + POS_ADDR_ARGUMENT_INDEX]),
+          IRB.CreateIntCast(AroundInvalidAddressRet, GroupMutatorMissAddr->getType(), false));
+
         instrumented = true;
       }
     }

@@ -20,7 +20,6 @@ using namespace llvm;
 
 //
 // callstack
-// OTHER_CONTEXT, PARENT_FUNCTION, TARGET_FUNCTION, TARGET_FUNCTION_INDEX, ADDR_ARGUMENT_INDEX
 //
 #define POS_PARENT_FUNCTION             (-4)
 #define POS_TARGET_FUNCTION             (-3)
