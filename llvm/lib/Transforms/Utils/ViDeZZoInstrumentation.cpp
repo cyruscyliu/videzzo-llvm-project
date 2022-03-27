@@ -95,7 +95,10 @@ struct ViDeZZoInstrumentationLegacyPass: public ModulePass {
           Function *fun = call->getCalledFunction();
           if (fun) {
             called_function_name = fun->getName();
+          } else if (call->isInlineAsm()) {
+            continue;
           } else {
+            errs() << *call << "\n";
             LoadInst *load_inst = dyn_cast<LoadInst>(call->getCalledOperand());
             for (Use &U : load_inst->operands()) {
               Value *V = U.get();
