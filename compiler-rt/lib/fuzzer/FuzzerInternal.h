@@ -65,10 +65,10 @@ public:
   static void StaticFileSizeExceedCallback();
   static void StaticGracefulExitCallback();
 
-  void ExecuteCallback(uint8_t *Data, size_t Size);
+  size_t ExecuteCallback(uint8_t *Data, size_t Size);
   bool RunOne(uint8_t *Data, size_t Size, bool MayDeleteFile = false,
               InputInfo *II = nullptr, bool ForceAddToCorpus = false,
-              bool *FoundUniqFeatures = nullptr);
+              bool *FoundUniqFeatures = nullptr, size_t *NewSize = nullptr);
   void TPCUpdateObservedPCs();
 
   // Merge Corpora[1:] into Corpora[0].
@@ -93,7 +93,6 @@ private:
   void AlarmCallback();
   void CrashCallback();
   void ExitCallback();
-  void CrashOnOverwrittenData();
   void InterruptCallback();
   void MutateAndTestOne();
   void PurgeAllocator();

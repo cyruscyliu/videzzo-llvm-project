@@ -502,11 +502,16 @@ static void WriteEdgeToMutationGraphFile(const std::string &MutationGraphFile,
 
 bool Fuzzer::RunOne(uint8_t *Data, size_t Size, bool MayDeleteFile,
                     InputInfo *II, bool ForceAddToCorpus,
-                    bool *FoundUniqFeatures) {
+                    bool *FoundUniqFeatures, size_t *NewSize) {
   if (!Size)
     return false;
 
-  ExecuteCallback(Data, Size);
+  size_t NewSizeTmp = ExecuteCallback(Data, Size);
+  if (NewSize && NewSizeTmp) {
+    *NewSize = NewSizeTmp;
+    Size = NewSizeTmp;
+  }
+
   auto TimeOfUnit = duration_cast<microseconds>(UnitStopTime - UnitStartTime);
 
   UniqFeatureSetTmp.clear();
@@ -559,24 +564,13 @@ size_t Fuzzer::GetCurrentUnitInFuzzingThead(const uint8_t **Data) const {
   return CurrentUnitSize;
 }
 
-void Fuzzer::CrashOnOverwrittenData() {
-  Printf("==%d== ERROR: libFuzzer: fuzz target overwrites its const input\n",
-         GetPid());
-  PrintStackTrace();
-  Printf("SUMMARY: libFuzzer: overwrites-const-input\n");
-  DumpCurrentUnit("crash-");
-  PrintFinalStats();
-  _Exit(Options.ErrorExitCode); // Stop right now.
-}
-
-void Fuzzer::ExecuteCallback(uint8_t *Data, size_t Size) {
+size_t Fuzzer::ExecuteCallback(uint8_t *Data, size_t Size) {
   TPC.RecordInitialStack();
   TotalNumberOfRuns++;
   assert(InFuzzingThread());
   // We copy the contents of Unit into a separate heap buffer
   // so that we reliably find buffer overflows in it.
-  // TODO: videzzo breaks this assumption; let's assuse it's 4096
-  uint8_t *DataCopy = new uint8_t[4096];
+  uint8_t *DataCopy = new uint8_t[MaxMutationLen];
   memcpy(DataCopy, Data, Size);
   if (EF->__msan_unpoison)
     EF->__msan_unpoison(DataCopy, Size);
@@ -592,17 +586,17 @@ void Fuzzer::ExecuteCallback(uint8_t *Data, size_t Size) {
     UnitStartTime = system_clock::now();
     TPC.ResetMaps();
     RunningUserCallback = true;
-    NewSize = (size_t)CB(DataCopy, Size);
+    int Res = CB(DataCopy, Size);
+    NewSize = Res;
     RunningUserCallback = false;
     UnitStopTime = system_clock::now();
+    memcpy(Data, DataCopy, Res);
+    (void)Res;
     HasMoreMallocsThanFrees = AllocTracer.Stop();
-  }
-  if (NewSize != 1 && NewSize > Size) {
-    // we only append events, so
-    memcpy(Data, DataCopy, NewSize);
   }
   CurrentUnitSize = 0;
   delete[] DataCopy;
+  return NewSize;
 }
 
 std::string Fuzzer::WriteToOutputCorpus(const Unit &U, const bool NotInteresting) {
@@ -727,6 +721,7 @@ void Fuzzer::MutateAndTestOne() {
       Min(MaxMutationLen, Max(U.size(), TmpMaxMutationLen));
   assert(CurrentMaxMutationLen > 0);
 
+  // We have to track both CurrentUnitData and Size
   for (int i = 0; i < Options.MutateDepth; i++) {
     if (TotalNumberOfRuns >= Options.MaxNumberOfRuns)
       break;
@@ -742,13 +737,17 @@ void Fuzzer::MutateAndTestOne() {
       NewSize = MD.Mutate(CurrentUnitData, Size, CurrentMaxMutationLen);
     assert(NewSize > 0 && "Mutator returned empty unit");
     assert(NewSize <= CurrentMaxMutationLen && "Mutator return oversized unit");
+    // Size is updated after mutation, good
     Size = NewSize;
     II.NumExecutedMutations++;
     Corpus.IncrementNumExecutedMutations();
 
     bool FoundUniqFeatures = false;
+    // This is the one and the only one position we enable group mutators
+    EF->enable_group_mutator();
     bool NewCov = RunOne(CurrentUnitData, Size, /*MayDeleteFile=*/true, &II,
-                         /*ForceAddToCorpus*/ false, &FoundUniqFeatures);
+                         /*ForceAddToCorpus*/ false, &FoundUniqFeatures, &Size);
+    EF->disable_group_mutator();
     TotalNumberOfValidRuns++;
     TryDetectingAMemoryLeak(CurrentUnitData, Size,
                             /*DuringInitialCorpusExecution*/ false);
