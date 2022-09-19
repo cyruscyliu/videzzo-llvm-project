@@ -270,6 +270,10 @@ bool TracePC::ObservedFocusFunction() {
   return FocusFunctionCounterPtr && *FocusFunctionCounterPtr;
 }
 
+void TracePC::PrintStatefulCoverage(bool PrintAllCounters) {
+    StateCounters.Print(PrintAllCounters);
+}
+
 void TracePC::PrintCoverage(bool PrintAllCounters) {
   if (!EF->__sanitizer_symbolize_pc ||
       !EF->__sanitizer_get_module_and_offset_for_pc) {
@@ -381,6 +385,14 @@ void TracePC::HandleCmp(uintptr_t PC, T Arg1, T Arg2) {
   uint64_t AbsoluteDistance = (Arg1 == Arg2 ? 0 : Clzll(Arg1 - Arg2) + 1);
   ValueProfileMap.AddValue(PC * 128 + HammingDistance);
   ValueProfileMap.AddValue(PC * 128 + 64 + AbsoluteDistance);
+}
+
+ATTRIBUTE_NO_SANITIZE_ALL
+void TracePC::HandleState(uintptr_t PC, uint8_t StateMachineId, size_t NodeId) {
+    // We have at most 256 state machines, each with at most 64 nodes.
+    StateCounters.UpdateState(StateMachineId, NodeId);
+    if (EF->LLVMFuzzerTraceStateCallback)
+        EF->LLVMFuzzerTraceStateCallback(StateMachineId, NodeId);
 }
 
 static size_t InternalStrnlen(const char *S, size_t MaxLen) {
@@ -603,6 +615,14 @@ ATTRIBUTE_TARGET_POPCNT
 void __sanitizer_cov_trace_gep(uintptr_t Idx) {
   uintptr_t PC = reinterpret_cast<uintptr_t>(GET_CALLER_PC());
   fuzzer::TPC.HandleCmp(PC, Idx, (uintptr_t)0);
+}
+
+ATTRIBUTE_INTERFACE
+ATTRIBUTE_NO_SANITIZE_ALL
+ATTRIBUTE_TARGET_POPCNT
+void __sanitizer_cov_trace_state(uint8_t StateMachineId, size_t Node) {
+  uintptr_t PC = reinterpret_cast<uintptr_t>(GET_CALLER_PC());
+  fuzzer::TPC.HandleState(PC, StateMachineId, Node);
 }
 
 ATTRIBUTE_INTERFACE ATTRIBUTE_NO_SANITIZE_MEMORY

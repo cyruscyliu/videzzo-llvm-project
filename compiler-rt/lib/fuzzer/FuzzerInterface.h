@@ -63,6 +63,10 @@ LLVMFuzzerCustomCrossOver(const uint8_t *Data1, size_t Size1,
                           const uint8_t *Data2, size_t Size2, uint8_t *Out,
                           size_t MaxOutSize, unsigned int Seed);
 
+// Optional user-provided SanCovTraceState callback function.
+FUZZER_INTERFACE_VISIBILITY void
+LLVMFuzzerTraceStateCallback(uint8_t StateMachindId, size_t NodeId);
+
 // Experimental, may go away in future.
 // libFuzzer-provided function to be used inside LLVMFuzzerCustomMutator.
 // Mutates raw data in [Data, Data+Size) inplace.

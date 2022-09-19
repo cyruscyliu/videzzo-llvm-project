@@ -362,6 +362,10 @@ void Fuzzer::PrintFinalStats() {
     TPC.PrintCoverage(/*PrintAllCounters=*/false);
   if (Options.PrintCorpusStats)
     Corpus.PrintStats();
+  if (Options.PrintFullStatefulCoverage)
+    TPC.PrintStatefulCoverage(/*PrintAllCounters=*/true);
+  if (Options.PrintStatefulCoverage)
+    TPC.PrintStatefulCoverage(/*PrintAllCounters=*/false);
   if (!Options.PrintFinalStats)
     return;
   size_t ExecPerSec = execPerSec();
