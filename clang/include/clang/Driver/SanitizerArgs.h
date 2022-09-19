@@ -29,7 +29,6 @@ class SanitizerArgs {
   std::vector<std::string> SystemBlacklistFiles;
   std::vector<std::string> CoverageAllowlistFiles;
   std::vector<std::string> CoverageBlocklistFiles;
-  std::vector<std::string> CoverageStatelistFiles;
   int CoverageFeatures = 0;
   int MsanTrackOrigins = 0;
   bool MsanUseAfterDtor = true;

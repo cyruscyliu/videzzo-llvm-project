@@ -79,8 +79,6 @@ const char SanCovPCsSectionName[] = "sancov_pcs";
 
 const char SanCovLowestStackName[] = "__sancov_lowest_stack";
 
-const char SanCovTraceStateName[] = "__sanitizer_cov_trace_state";
-
 static cl::opt<int> ClCoverageLevel(
     "sanitizer-coverage-level",
     cl::desc("Sanitizer Coverage. 0: none, 1: entry block, 2: all blocks, "
@@ -137,16 +135,7 @@ static cl::opt<bool> ClStackDepth("sanitizer-coverage-stack-depth",
                                   cl::desc("max stack depth tracing"),
                                   cl::Hidden, cl::init(false));
 
-static cl::opt<bool> ClTraceState("sanitizer-coverage-trace-state",
-                                  cl::desc("Tracing of states"),
-                                  cl::Hidden, cl::init(false));
-
 namespace {
-
-struct StoreInstExtended {
-  uint8_t StateMachineId;
-  StoreInst *SI;
-};
 
 SanitizerCoverageOptions getOptions(int LegacyCoverageLevel) {
   SanitizerCoverageOptions Res;
@@ -186,7 +175,6 @@ SanitizerCoverageOptions OverrideFromCL(SanitizerCoverageOptions Options) {
   Options.PCTable |= ClCreatePCTable;
   Options.NoPrune |= !ClPruneBlocks;
   Options.StackDepth |= ClStackDepth;
-  Options.TraceState |= ClStackDepth;
   if (!Options.TracePCGuard && !Options.TracePC &&
       !Options.Inline8bitCounters && !Options.StackDepth &&
       !Options.InlineBoolFlag)
@@ -203,10 +191,9 @@ public:
   ModuleSanitizerCoverage(
       const SanitizerCoverageOptions &Options = SanitizerCoverageOptions(),
       const SpecialCaseList *Allowlist = nullptr,
-      const SpecialCaseList *Blocklist = nullptr,
-      const SpecialCaseList *Statelist = nullptr)
+      const SpecialCaseList *Blocklist = nullptr)
       : Options(OverrideFromCL(Options)), Allowlist(Allowlist),
-        Blocklist(Blocklist), Statelist(Statelist) {}
+        Blocklist(Blocklist) {}
   bool instrumentModule(Module &M, DomTreeCallback DTCallback,
                         PostDomTreeCallback PDTCallback);
 
@@ -215,7 +202,6 @@ private:
                           PostDomTreeCallback PDTCallback);
   void InjectCoverageForIndirectCalls(Function &F,
                                       ArrayRef<Instruction *> IndirCalls);
-  void InjectTraceForState(Function &F, ArrayRef<StoreInstExtended *> StateTraceTargets);
   void InjectTraceForCmp(Function &F, ArrayRef<Instruction *> CmpTraceTargets);
   void InjectTraceForDiv(Function &F,
                          ArrayRef<BinaryOperator *> DivTraceTargets);
@@ -254,7 +240,6 @@ private:
   FunctionCallee SanCovTraceGepFunction;
   FunctionCallee SanCovTraceSwitchFunction;
   GlobalVariable *SanCovLowestStack;
-  FunctionCallee SanCovTraceState;
   Type *IntptrTy, *IntptrPtrTy, *Int64Ty, *Int64PtrTy, *Int32Ty, *Int32PtrTy,
       *Int16Ty, *Int8Ty, *Int8PtrTy, *Int1Ty, *Int1PtrTy;
   Module *CurModule;
@@ -274,8 +259,6 @@ private:
 
   const SpecialCaseList *Allowlist;
   const SpecialCaseList *Blocklist;
-  bool findStateSetters(GetElementPtrInst *GEP, SmallVector<StoreInstExtended *, 8> &stateSetters);
-  const SpecialCaseList *Statelist;
 };
 
 class ModuleSanitizerCoverageLegacyPass : public ModulePass {
@@ -285,8 +268,6 @@ public:
       const std::vector<std::string> &AllowlistFiles =
           std::vector<std::string>(),
       const std::vector<std::string> &BlocklistFiles =
-          std::vector<std::string>(),
-      const std::vector<std::string> &StatelistFiles =
           std::vector<std::string>())
       : ModulePass(ID), Options(Options) {
     if (AllowlistFiles.size() > 0)
@@ -295,15 +276,12 @@ public:
     if (BlocklistFiles.size() > 0)
       Blocklist = SpecialCaseList::createOrDie(BlocklistFiles,
                                                *vfs::getRealFileSystem());
-    if (StatelistFiles.size() > 0)
-      Statelist = SpecialCaseList::createOrDie(StatelistFiles,
-                                               *vfs::getRealFileSystem());
     initializeModuleSanitizerCoverageLegacyPassPass(
         *PassRegistry::getPassRegistry());
   }
   bool runOnModule(Module &M) override {
     ModuleSanitizerCoverage ModuleSancov(Options, Allowlist.get(),
-                                         Blocklist.get(), Statelist.get());
+                                         Blocklist.get());
     auto DTCallback = [this](Function &F) -> const DominatorTree * {
       return &this->getAnalysis<DominatorTreeWrapperPass>(F).getDomTree();
     };
@@ -328,7 +306,6 @@ private:
 
   std::unique_ptr<SpecialCaseList> Allowlist;
   std::unique_ptr<SpecialCaseList> Blocklist;
-  std::unique_ptr<SpecialCaseList> Statelist;
 };
 
 } // namespace
@@ -336,7 +313,7 @@ private:
 PreservedAnalyses ModuleSanitizerCoveragePass::run(Module &M,
                                                    ModuleAnalysisManager &MAM) {
   ModuleSanitizerCoverage ModuleSancov(Options, Allowlist.get(),
-                                       Blocklist.get(), Statelist.get());
+                                       Blocklist.get());
   auto &FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
   auto DTCallback = [&FAM](Function &F) -> const DominatorTree * {
     return &FAM.getResult<DominatorTreeAnalysis>(F);
@@ -498,9 +475,6 @@ bool ModuleSanitizerCoverage::instrumentModule(
   SanCovTracePCGuard =
       M.getOrInsertFunction(SanCovTracePCGuardName, VoidTy, Int32PtrTy);
 
-  SanCovTraceState =
-      M.getOrInsertFunction(SanCovTraceStateName, VoidTy, Int8Ty, Int32Ty);
-
   for (auto &F : M) {
     instrumentFunction(F, DTCallback, PDTCallback);
   }
@@ -614,65 +588,6 @@ static bool IsInterestingCmp(ICmpInst *CMP, const DominatorTree *DT,
   return true;
 }
 
-// Identifies state setters according to StatelistFiles.
-bool ModuleSanitizerCoverage::findStateSetters(GetElementPtrInst *GEP,
-                             SmallVector<StoreInstExtended *, 8> &stateSetters) {
-    if (!Statelist) {
-        return false;
-    }
-    // obtain real struct name
-    StructType *ST = dyn_cast<StructType>(GEP->getSourceElementType());
-    if (!ST || !ST->hasName())
-        return false;
-    StringRef structName = ST->getName(); // struct.StructName.suffix
-    SmallVector<StringRef, 1> splitedStructName;
-    structName.split(splitedStructName, ".");
-    StringRef realStructName = splitedStructName[1];
-    uint32_t StateMachineId = 0;
-    for (StringRef::iterator io = realStructName.begin();
-            io != realStructName.end(); io++) {
-        StateMachineId += uint32_t(*io);
-    }
-
-    // obtain field index chain separated by ","
-    SmallVector<uint64_t, 8> indices;
-    for (GetElementPtrInst::op_iterator io = GEP->idx_begin();
-            io != GEP->idx_end(); io++) {
-        if (io == GEP->idx_begin())
-            continue;
-        Value *V = (*io).get();
-        ConstantInt *CI = dyn_cast<ConstantInt>(V);
-        if (!CI)
-            continue;
-        uint64_t index = CI->getZExtValue();
-        indices.push_back(index);
-        StateMachineId += uint32_t(index);
-    }
-    std::string indices_string = "";
-    for (uint32_t i = 0; i < indices.size(); i++) {
-        indices_string += std::to_string(indices[i]);
-        if (i < indices.size() - 1)
-            indices_string += ",";
-    }
-
-    // compare
-    if (!Statelist->inSection("state", realStructName, StringRef(indices_string)))
-        return false;
-
-    // find all store instructions
-    for (User *U : GEP->users()) {
-        StoreInst *SI = dyn_cast<StoreInst>(U);
-        if (!SI)
-            continue;
-        StoreInstExtended *SIE =
-            (StoreInstExtended *)malloc(sizeof(StoreInstExtended));
-        SIE->SI = SI;
-        SIE->StateMachineId = StateMachineId % (1 << 8);
-        stateSetters.push_back(SIE);
-    }
-    return true;
-}
-
 void ModuleSanitizerCoverage::instrumentFunction(
     Function &F, DomTreeCallback DTCallback, PostDomTreeCallback PDTCallback) {
   if (F.empty())
@@ -709,8 +624,6 @@ void ModuleSanitizerCoverage::instrumentFunction(
   SmallVector<Instruction *, 8> SwitchTraceTargets;
   SmallVector<BinaryOperator *, 8> DivTraceTargets;
   SmallVector<GetElementPtrInst *, 8> GepTraceTargets;
-  SmallVector<StoreInstExtended *, 8> StateTraceTargets;
-  SmallVector<StoreInstExtended *, 8> tmpStateTraceTargets;
 
   const DominatorTree *DT = DTCallback(F);
   const PostDominatorTree *PDT = PDTCallback(F);
@@ -744,14 +657,6 @@ void ModuleSanitizerCoverage::instrumentFunction(
         if (isa<InvokeInst>(Inst) ||
             (isa<CallInst>(Inst) && !isa<IntrinsicInst>(Inst)))
           IsLeafFunc = false;
-      if (Options.TraceState)
-          if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(&Inst)) {
-              tmpStateTraceTargets.clear();
-              if (findStateSetters(GEP, tmpStateTraceTargets))
-                  StateTraceTargets.insert(StateTraceTargets.end(),
-                                           tmpStateTraceTargets.begin(),
-                                           tmpStateTraceTargets.end());
-          }
     }
   }
 
@@ -761,7 +666,6 @@ void ModuleSanitizerCoverage::instrumentFunction(
   InjectTraceForSwitch(F, SwitchTraceTargets);
   InjectTraceForDiv(F, DivTraceTargets);
   InjectTraceForGep(F, GepTraceTargets);
-  InjectTraceForState(F, StateTraceTargets);
 }
 
 GlobalVariable *ModuleSanitizerCoverage::CreateFunctionLocalArrayInSection(
@@ -914,24 +818,6 @@ void ModuleSanitizerCoverage::InjectTraceForSwitch(
                      {Cond, IRB.CreatePointerCast(GV, Int64PtrTy)});
     }
   }
-}
-
-void ModuleSanitizerCoverage::InjectTraceForState(
-    Function &F, ArrayRef<StoreInstExtended *> StateTraceTargets) {
-  int Occurance = 0;
-  for (StoreInstExtended *SIE : StateTraceTargets) {
-      StoreInst *SI = SIE->SI;
-      IRBuilder<> IRB(SIE->SI);
-      Value *StateMachineId = IRB.getInt8(SIE->StateMachineId);
-      Value *Node = SI->getOperand(0);
-
-      IRB.CreateCall(SanCovTraceState,
-                     {IRB.CreateIntCast(StateMachineId, Int8Ty, false),
-                     IRB.CreateIntCast(Node, Int32Ty, false)});
-      Occurance++;
-  }
-  if (Occurance)
-      errs() << "[+] Inject " << Occurance << " program points (SanCovTraceState) in " << F.getName() << "\n";
 }
 
 void ModuleSanitizerCoverage::InjectTraceForDiv(
@@ -1111,8 +997,7 @@ INITIALIZE_PASS_END(ModuleSanitizerCoverageLegacyPass, "sancov",
 ModulePass *llvm::createModuleSanitizerCoverageLegacyPassPass(
     const SanitizerCoverageOptions &Options,
     const std::vector<std::string> &AllowlistFiles,
-    const std::vector<std::string> &BlocklistFiles,
-    const std::vector<std::string> &StatelistFiles) {
+    const std::vector<std::string> &BlocklistFiles) {
   return new ModuleSanitizerCoverageLegacyPass(Options, AllowlistFiles,
-                                               BlocklistFiles, StatelistFiles);
+                                               BlocklistFiles);
 }

@@ -371,11 +371,6 @@ public:
   /// by sanitizer coverage pass.
   std::vector<std::string> SanitizeCoverageAllowlistFiles;
 
-  /// Path to statelist file specifying which objects
-  /// (structName, indexChain) should be instrumented
-  /// by sanitizer coverage pass.
-  std::vector<std::string> SanitizeCoverageStatelistFiles;
-
   /// The guard style used for stack protector to get a initial value, this
   /// value usually be gotten from TLS or get from __stack_chk_guard, or some
   /// other styles we may implement in the future.

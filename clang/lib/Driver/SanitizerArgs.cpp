@@ -90,7 +90,6 @@ enum CoverageFeature {
   CoveragePCTable = 1 << 13,
   CoverageStackDepth = 1 << 14,
   CoverageInlineBoolFlag = 1 << 15,
-  CoverageTraceState = 1 << 16,
 };
 
 /// Parse a -fsanitize= or -fno-sanitize= argument's values, diagnosing any
@@ -420,7 +419,7 @@ SanitizerArgs::SanitizerArgs(const ToolChain &TC,
       // Enable coverage if the fuzzing flag is set.
       if (Add & SanitizerKind::FuzzerNoLink) {
         CoverageFeatures |= CoverageInline8bitCounters | CoverageIndirCall |
-                            CoverageTraceCmp | CoveragePCTable | CoverageTraceState;
+                            CoverageTraceCmp | CoveragePCTable;
         // Due to TLS differences, stack depth tracking is only enabled on Linux
         if (TC.getTriple().isOSLinux())
           CoverageFeatures |= CoverageStackDepth;
@@ -760,10 +759,6 @@ SanitizerArgs::SanitizerArgs(const ToolChain &TC,
         D, Args, CoverageBlocklistFiles,
         options::OPT_fsanitize_coverage_blocklist, OptSpecifier(),
         clang::diag::err_drv_malformed_sanitizer_coverage_blacklist);
-    parseSpecialCaseListArg(
-        D, Args, CoverageStatelistFiles,
-        options::OPT_fsanitize_coverage_statelist, OptSpecifier(),
-        clang::diag::err_drv_malformed_sanitizer_coverage_statelist);
   }
 
   SharedRuntime =
@@ -985,8 +980,7 @@ void SanitizerArgs::addArgs(const ToolChain &TC, const llvm::opt::ArgList &Args,
                      "-fsanitize-coverage-inline-bool-flag"),
       std::make_pair(CoveragePCTable, "-fsanitize-coverage-pc-table"),
       std::make_pair(CoverageNoPrune, "-fsanitize-coverage-no-prune"),
-      std::make_pair(CoverageStackDepth, "-fsanitize-coverage-stack-depth"),
-      std::make_pair(CoverageTraceState, "-fsanitize-coverage-trace-state")};
+      std::make_pair(CoverageStackDepth, "-fsanitize-coverage-stack-depth")};
   for (auto F : CoverageFlags) {
     if (CoverageFeatures & F.first)
       CmdArgs.push_back(F.second);
@@ -995,8 +989,6 @@ void SanitizerArgs::addArgs(const ToolChain &TC, const llvm::opt::ArgList &Args,
       Args, CmdArgs, "-fsanitize-coverage-allowlist=", CoverageAllowlistFiles);
   addSpecialCaseListOpt(
       Args, CmdArgs, "-fsanitize-coverage-blocklist=", CoverageBlocklistFiles);
-  addSpecialCaseListOpt(
-      Args, CmdArgs, "-fsanitize-coverage-statelist=", CoverageStatelistFiles);
 
   if (TC.getTriple().isOSWindows() && needsUbsanRt()) {
     // Instruct the code generator to embed linker directives in the object file
@@ -1212,7 +1204,6 @@ int parseCoverageFeatures(const Driver &D, const llvm::opt::Arg *A) {
                 .Case("inline-bool-flag", CoverageInlineBoolFlag)
                 .Case("pc-table", CoveragePCTable)
                 .Case("stack-depth", CoverageStackDepth)
-                .Case("trace-state", CoverageTraceState)
                 .Default(0);
     if (F == 0)
       D.Diag(clang::diag::err_drv_unsupported_option_argument)

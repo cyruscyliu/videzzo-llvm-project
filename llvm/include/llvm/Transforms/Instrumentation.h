@@ -169,8 +169,6 @@ struct SanitizerCoverageOptions {
   bool PCTable = false;
   bool NoPrune = false;
   bool StackDepth = false;
-  bool TraceState = false;
-  std::string InstrumentState = "-";
 
   SanitizerCoverageOptions() = default;
 };

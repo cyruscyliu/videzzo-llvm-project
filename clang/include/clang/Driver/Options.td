@@ -1483,10 +1483,6 @@ def fsanitize_coverage_blocklist : Joined<["-"], "fsanitize-coverage-blocklist="
 def : Joined<["-"], "fsanitize-coverage-blacklist=">,
   Group<f_clang_Group>, Flags<[CoreOption, HelpHidden]>, Alias<fsanitize_coverage_blocklist>,
   HelpText<"Deprecated, use -fsanitize-coverage-blocklist= instead">;
-def fsanitize_coverage_statelist: Joined<["-"], "fsanitize-coverage-statelist=">,
-  Group<f_clang_Group>, Flags<[CoreOption, NoXarchOption]>,
-  HelpText<"Specify the states to be instrumented by SanCovTraceState">,
-  MarshallingInfoStringVector<CodeGenOpts<"SanitizeCoverageStatelistFiles">>;
 def fsanitize_memory_track_origins_EQ : Joined<["-"], "fsanitize-memory-track-origins=">,
                                         Group<f_clang_Group>,
                                         HelpText<"Enable origins tracking in MemorySanitizer">,
@@ -4827,10 +4823,6 @@ def fsanitize_coverage_stack_depth
     : Flag<["-"], "fsanitize-coverage-stack-depth">,
       HelpText<"Enable max stack depth tracing">,
       MarshallingInfoFlag<CodeGenOpts<"SanitizeCoverageStackDepth">>;
-def fsanitize_coverage_trace_state
-    : Flag<["-"], "fsanitize-coverage-trace-state">,
-      HelpText<"Enable state tracing in sanitizer coverage">,
-      MarshallingInfoFlag<CodeGenOpts<"SanitizeCoverageTraceState">>;
 def fpatchable_function_entry_offset_EQ
     : Joined<["-"], "fpatchable-function-entry-offset=">, MetaVarName<"<M>">,
       HelpText<"Generate M NOPs before function entry">,

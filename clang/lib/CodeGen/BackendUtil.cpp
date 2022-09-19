@@ -233,8 +233,6 @@ getSancovOptsFromCGOpts(const CodeGenOptions &CGOpts) {
   Opts.InlineBoolFlag = CGOpts.SanitizeCoverageInlineBoolFlag;
   Opts.PCTable = CGOpts.SanitizeCoveragePCTable;
   Opts.StackDepth = CGOpts.SanitizeCoverageStackDepth;
-  Opts.TraceState = CGOpts.SanitizeCoverageTraceState;
-  Opts.InstrumentState = CGOpts.SanitizeCoverageInstrumentState;
   return Opts;
 }
 
@@ -246,8 +244,7 @@ static void addSanitizerCoveragePass(const PassManagerBuilder &Builder,
   auto Opts = getSancovOptsFromCGOpts(CGOpts);
   PM.add(createModuleSanitizerCoverageLegacyPassPass(
       Opts, CGOpts.SanitizeCoverageAllowlistFiles,
-      CGOpts.SanitizeCoverageBlocklistFiles,
-      CGOpts.SanitizeCoverageStatelistFiles));
+      CGOpts.SanitizeCoverageBlocklistFiles));
 }
 
 // Check if ASan should use GC-friendly instrumentation for globals.
@@ -1111,8 +1108,7 @@ static void addSanitizers(const Triple &TargetTriple,
       auto SancovOpts = getSancovOptsFromCGOpts(CodeGenOpts);
       MPM.addPass(ModuleSanitizerCoveragePass(
           SancovOpts, CodeGenOpts.SanitizeCoverageAllowlistFiles,
-          CodeGenOpts.SanitizeCoverageBlocklistFiles,
-          CodeGenOpts.SanitizeCoverageStatelistFiles));
+          CodeGenOpts.SanitizeCoverageBlocklistFiles));
     }
 
     auto MSanPass = [&](SanitizerMask Mask, bool CompileKernel) {

@@ -65,8 +65,8 @@ private:
 ModulePass *createModuleSanitizerCoverageLegacyPassPass(
     const SanitizerCoverageOptions &Options = SanitizerCoverageOptions(),
     const std::vector<std::string> &AllowlistFiles = std::vector<std::string>(),
-    const std::vector<std::string> &BlocklistFiles = std::vector<std::string>(),
-    const std::vector<std::string> &StatelistFiles = std::vector<std::string>());
+    const std::vector<std::string> &BlocklistFiles =
+        std::vector<std::string>());
 
 } // namespace llvm
 

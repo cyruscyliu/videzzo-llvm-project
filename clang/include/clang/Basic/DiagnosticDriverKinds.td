@@ -169,8 +169,6 @@ def err_drv_malformed_sanitizer_coverage_whitelist : Error<
   "malformed sanitizer coverage whitelist: '%0'">;
 def err_drv_malformed_sanitizer_coverage_blacklist : Error<
   "malformed sanitizer coverage blacklist: '%0'">;
-def err_drv_malformed_sanitizer_coverage_statelist : Error<
-  "malformed sanitizer coverage statelist: '%0'">;
 def err_drv_duplicate_config : Error<
   "no more than one option '--config' is allowed">;
 def err_drv_config_file_not_exist : Error<
