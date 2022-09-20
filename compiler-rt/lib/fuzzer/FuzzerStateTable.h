@@ -130,24 +130,23 @@ public:
     }
 
 private:
-    // Return true if the byte is not saturated.
     ATTRIBUTE_NO_SANITIZE_ALL
-    inline bool GetNodeValue(uint8_t StateMachineId, size_t Node) const {
+    inline uint8_t GetNodeValue(uint8_t StateMachineId, size_t Node) const {
         return Table[StateMachineId].NodeMap[Node];
     }
 
     ATTRIBUTE_NO_SANITIZE_ALL
-    inline bool GetAccumulatedNodeValue(uint8_t StateMachineId, size_t Node) const {
+    inline uint8_t GetAccumulatedNodeValue(uint8_t StateMachineId, size_t Node) const {
         return TableAccumulated[StateMachineId].NodeMap[Node];
     }
 
     ATTRIBUTE_NO_SANITIZE_ALL
-    inline bool GetEdgeValue(uint8_t StateMachineId, size_t Edge) const {
+    inline uint8_t GetEdgeValue(uint8_t StateMachineId, size_t Edge) const {
         return Table[StateMachineId].EdgeMap[Edge];
     }
 
     ATTRIBUTE_NO_SANITIZE_ALL
-    inline bool GetAccumulatedEdgeValue(uint8_t StateMachineId, size_t Edge) const {
+    inline uint8_t GetAccumulatedEdgeValue(uint8_t StateMachineId, size_t Edge) const {
         return TableAccumulated[StateMachineId].EdgeMap[Edge];
     }
 
