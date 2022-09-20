@@ -240,7 +240,7 @@ void Fuzzer::CrashResistantMergeInternalStep(const std::string &CFPath) {
     TPC.CollectFeatures([&](size_t Feature) {
       if (AllFeatures.insert(Feature).second)
         UniqFeatures.insert(Feature);
-    });
+    }, false);
     TPC.UpdateObservedPCs();
     // Show stats.
     if (!(TotalNumberOfRuns & (TotalNumberOfRuns - 1)))

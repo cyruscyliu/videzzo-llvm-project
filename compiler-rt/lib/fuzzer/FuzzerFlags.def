@@ -141,6 +141,7 @@ FUZZER_FLAG_INT(print_stateful_coverage, 0, "If 1, print stateful coverage infor
                                         "(all state machines) as text at exit.")
 FUZZER_FLAG_INT(print_full_stateful_coverage, 0, "If 1, print full stateful coverage information "
                                         "(all state machines with counters) as text at exit.")
+FUZZER_FLAG_INT(stateful_feedback, 0, "If 1, enable the stateful feedback.")
 FUZZER_FLAG_INT(dump_coverage, 0, "Deprecated.")
 FUZZER_FLAG_INT(handle_segv, 1, "If 1, try to intercept SIGSEGV.")
 FUZZER_FLAG_INT(handle_bus, 1, "If 1, try to intercept SIGBUS.")

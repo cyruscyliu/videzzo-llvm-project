@@ -81,7 +81,7 @@ class TracePC {
   void SetPrintNewPCs(bool P) { DoPrintNewPCs = P; }
   void SetPrintNewFuncs(size_t P) { NumPrintNewFuncs = P; }
   void UpdateObservedPCs();
-  template <class Callback> void CollectFeatures(Callback CB) const;
+  template <class Callback> void CollectFeatures(Callback CB, bool StatefuFeedback) const;
 
   void ResetMaps() {
     ValueProfileMap.Reset();
@@ -242,7 +242,7 @@ unsigned CounterToFeature(T Counter) {
 template <class Callback>  // void Callback(size_t Feature)
 ATTRIBUTE_NO_SANITIZE_ADDRESS
 ATTRIBUTE_NOINLINE
-void TracePC::CollectFeatures(Callback HandleFeature) const {
+void TracePC::CollectFeatures(Callback HandleFeature, bool StatefulFeedback) const {
   auto Handle8bitCounter = [&](size_t FirstFeature,
                                size_t Idx, uint8_t Counter) {
     if (UseCounters)
@@ -273,10 +273,12 @@ void TracePC::CollectFeatures(Callback HandleFeature) const {
     FirstFeature += ValueProfileMap.SizeInBits();
   }
 
-  StateCounters.ForEachNonZeroByte([&](size_t Idx, size_t Counter) {
-    Handle8bitCounter(FirstFeature, Idx, Counter);
-  });
-  FirstFeature += StateCounters.SizeInBytes();
+  if (StatefulFeedback) {
+    StateCounters.ForEachNonZeroByte([&](size_t Idx, size_t Counter) {
+      Handle8bitCounter(FirstFeature, Idx, Counter);
+    });
+    FirstFeature += StateCounters.SizeInBytes();
+  }
 
   // Step function, grows similar to 8 * Log_2(A).
   auto StackDepthStepFunction = [](uint32_t A) -> uint32_t {

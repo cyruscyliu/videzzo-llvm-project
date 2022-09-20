@@ -530,7 +530,7 @@ bool Fuzzer::RunOne(uint8_t *Data, size_t Size, bool MayDeleteFile,
       if (std::binary_search(II->UniqFeatureSet.begin(),
                              II->UniqFeatureSet.end(), Feature))
         FoundUniqFeaturesOfII++;
-  });
+  }, Options.StatefulFeedback);
   if (FoundUniqFeatures)
     *FoundUniqFeatures = FoundUniqFeaturesOfII;
   PrintPulseAndReportSlowInput(Data, Size);

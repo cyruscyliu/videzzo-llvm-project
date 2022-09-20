@@ -72,6 +72,7 @@ struct FuzzingOptions {
   bool PrintFullCoverage = false;
   bool PrintStatefulCoverage = false;
   bool PrintFullStatefulCoverage = false;
+  bool StatefulFeedback = false;
   bool DumpCoverage = false;
   bool DetectLeaks = true;
   int PurgeAllocatorIntervalSec = 1;

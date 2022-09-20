@@ -548,7 +548,7 @@ int AnalyzeDictionary(Fuzzer *F, const Vector<Unit>& Dict,
     InitialFeatures.clear();
     TPC.CollectFeatures([&](size_t Feature) {
       InitialFeatures.push_back(Feature);
-    });
+    }, false);
 
     for (size_t i = 0; i < Dict.size(); ++i) {
       Vector<uint8_t> Data = C;
@@ -574,7 +574,7 @@ int AnalyzeDictionary(Fuzzer *F, const Vector<Unit>& Dict,
       ModifiedFeatures.clear();
       TPC.CollectFeatures([&](size_t Feature) {
         ModifiedFeatures.push_back(Feature);
-      });
+      }, false);
 
       if (InitialFeatures == ModifiedFeatures)
         --Scores[i];
@@ -773,6 +773,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   Options.PrintFullCoverage = Flags.print_full_coverage;
   Options.PrintStatefulCoverage = Flags.print_stateful_coverage;
   Options.PrintFullStatefulCoverage = Flags.print_full_stateful_coverage;
+  Options.StatefulFeedback = Flags.stateful_feedback;
   if (Flags.exit_on_src_pos)
     Options.ExitOnSrcPos = Flags.exit_on_src_pos;
   if (Flags.exit_on_item)
