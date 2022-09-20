@@ -38,10 +38,18 @@ struct StateTable {
 
 public:
     // Clear state machines.
-    void Reset() {
+    void ResetTable() {
         memset(Table, 0, sizeof(Table));
         for (size_t i = 0; i < kStateMachineSize; i++) {
             Table[i].LastNode = NodeSize;
+        }
+    }
+
+    // Clear accumulated state machines.
+    void ResetTableAccumulated() {
+        memset(TableAccumulated, 0, sizeof(TableAccumulated));
+        for (size_t i = 0; i < kStateMachineSize; i++) {
+            TableAccumulated[i].LastNode = NodeSize;
         }
     }
 
@@ -54,16 +62,15 @@ public:
         return NodeRet && EdgeRet;
     }
 
-    void Print(bool PrintAllCounters) {
+    void PrintAccumulatedStatefulCoverage(bool PrintAllCounters) {
         // Because most state machines are empty,
         // we won't print all of them to be anonying.
         size_t i, j;
-        Printf("==Stateful Coverage==\n");
         for (i = 0; i < kStateMachineSize; i++) {
             // Check here.
             uint32_t acc = 0;
             for (j = 0; j < kNodeSize; j++)
-                acc += GetNodeValue(i, j);
+                acc += GetAccumulatedNodeValue(i, j);
             if (acc == 0)
                 continue;
             // Print then.
@@ -71,7 +78,7 @@ public:
             Printf("====Node====\n");
             uint8_t v;
             for (j = 0; j < kNodeSize; j++) {
-                v = GetNodeValue(i, j);
+                v = GetAccumulatedNodeValue(i, j);
                 if (PrintAllCounters && v)
                     Printf("%02x", v);
                 else
@@ -85,7 +92,7 @@ public:
             for (j = 0; j < kEdgeSize; j++) {
                 if (j != 0 && j % kNodeSize == 0)
                     Printf("\n");
-                v = GetEdgeValue(i ,j);
+                v = GetAccumulatedEdgeValue(i ,j);
                 if (PrintAllCounters && v)
                     Printf("%02x", v);
                 else
@@ -126,13 +133,27 @@ private:
     }
 
     ATTRIBUTE_NO_SANITIZE_ALL
+    inline bool GetAccumulatedNodeValue(uint8_t StateMachineId, size_t Node) const {
+        return TableAccumulated[StateMachineId].NodeMap[Node];
+    }
+
+    ATTRIBUTE_NO_SANITIZE_ALL
     inline bool GetEdgeValue(uint8_t StateMachineId, size_t Edge) const {
         return Table[StateMachineId].EdgeMap[Edge];
     }
 
     ATTRIBUTE_NO_SANITIZE_ALL
+    inline bool GetAccumulatedEdgeValue(uint8_t StateMachineId, size_t Edge) const {
+        return TableAccumulated[StateMachineId].EdgeMap[Edge];
+    }
+
+    ATTRIBUTE_NO_SANITIZE_ALL
     inline bool UpdateNode(uint8_t StateMachineId, size_t Node) {
         assert(Node < kNodeSize);
+        // Update NodeMapAccumulated in any case
+        if (TableAccumulated[StateMachineId].NodeMap[Node] < 0xFF) {
+            TableAccumulated[StateMachineId].NodeMap[Node]++;
+        }
         // Update NodeMap
         if (Table[StateMachineId].NodeMap[Node] < 0xFF) {
             Table[StateMachineId].NodeMap[Node]++;
@@ -155,6 +176,10 @@ private:
             Table[StateMachineId].LastNode = Node;
         } else {
             Edge = Table[StateMachineId].LastNode * kNodeSize + Node;
+            // Update EdgeMapAccumulated in any case
+            if (TableAccumulated[StateMachineId].EdgeMap[Edge] < 0xFF)  {
+                TableAccumulated[StateMachineId].EdgeMap[Edge]++;
+            }
             if (Table[StateMachineId].EdgeMap[Edge] < 0xFF)  {
                 Table[StateMachineId].EdgeMap[Edge]++;
                 Table[StateMachineId].LastNode = Node;
@@ -164,6 +189,7 @@ private:
         return false;
     }
     ATTRIBUTE_ALIGNED(512) StateMachine Table[kStateMachineSize];
+    ATTRIBUTE_ALIGNED(512) StateMachine TableAccumulated[kStateMachineSize];
 };
 
 }  // namespace fuzzer

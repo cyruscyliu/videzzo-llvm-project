@@ -85,9 +85,13 @@ class TracePC {
 
   void ResetMaps() {
     ValueProfileMap.Reset();
-    StateCounters.Reset();
+    StateCounters.ResetTable();
     ClearExtraCounters();
     ClearInlineCounters();
+  }
+
+  void ResetStateCounterAccumulated() {
+    StateCounters.ResetTableAccumulated();
   }
 
   void ClearInlineCounters();

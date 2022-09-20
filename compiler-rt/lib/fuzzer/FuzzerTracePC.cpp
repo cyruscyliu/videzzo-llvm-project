@@ -271,7 +271,7 @@ bool TracePC::ObservedFocusFunction() {
 }
 
 void TracePC::PrintStatefulCoverage(bool PrintAllCounters) {
-    StateCounters.Print(PrintAllCounters);
+    StateCounters.PrintAccumulatedStatefulCoverage(PrintAllCounters);
 }
 
 void TracePC::PrintCoverage(bool PrintAllCounters) {
