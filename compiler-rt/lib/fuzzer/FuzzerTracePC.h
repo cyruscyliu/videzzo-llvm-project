@@ -94,6 +94,10 @@ class TracePC {
     StateCounters.ResetTableAccumulated();
   }
 
+  int DumpStateCounterAccumulated(std::string &pathname) {
+    return StateCounters.DumpTableAccumulated(pathname);
+  }
+
   void ClearInlineCounters();
 
   void UpdateFeatureSet(size_t CurrentElementIdx, size_t CurrentElementSize);

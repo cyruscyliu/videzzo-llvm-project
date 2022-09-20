@@ -442,6 +442,13 @@ void WarnAboutDeprecatedInstrumentation(const char *flag) {
 extern "C" {
 ATTRIBUTE_INTERFACE
 ATTRIBUTE_NO_SANITIZE_ALL
+int __llvm_state_write_file(char *pathname) {
+  std::string Path(pathname);
+  return fuzzer::TPC.DumpStateCounterAccumulated(Path);
+}
+
+ATTRIBUTE_INTERFACE
+ATTRIBUTE_NO_SANITIZE_ALL
 void __sanitizer_cov_trace_pc_guard(uint32_t *Guard) {
   fuzzer::WarnAboutDeprecatedInstrumentation(
       "-fsanitize-coverage=trace-pc-guard");

@@ -53,6 +53,14 @@ public:
         }
     }
 
+    // Dump accumulated state machines.
+    int DumpTableAccumulated(std::string &pathname) {
+        uint8_t *Data = (uint8_t *)TableAccumulated;
+        size_t Size = sizeof(TableAccumulated);
+        WriteToFile(Data, Size, pathname);
+        return Size;
+    }
+
     // Return true if the byte is not saturated.
     ATTRIBUTE_NO_SANITIZE_ALL
     inline bool UpdateState(uint8_t StateMachineId, size_t Node) {
