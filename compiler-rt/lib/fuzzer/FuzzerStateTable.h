@@ -79,12 +79,10 @@ public:
             uint8_t v;
             for (j = 0; j < kNodeSize; j++) {
                 v = GetAccumulatedNodeValue(i, j);
-                if (PrintAllCounters && v)
-                    Printf("%02x", v);
+                if (PrintAllCounters)
+                    v ? Printf("%02x", v) : Printf("--");
                 else
                     v ? Printf("x"): Printf("-");
-                if (j < kNodeSize - 1)
-                    Printf(" ");
             }
             Printf("\n");
             // Go on edges.
@@ -93,12 +91,10 @@ public:
                 if (j != 0 && j % kNodeSize == 0)
                     Printf("\n");
                 v = GetAccumulatedEdgeValue(i ,j);
-                if (PrintAllCounters && v)
-                    Printf("%02x", v);
+                if (PrintAllCounters)
+                    v ?  Printf("%02x", v) : Printf("--");
                 else
                     v ? Printf("x"): Printf("-");
-                if ((j % kNodeSize) < kNodeSize - 1)
-                    Printf(" ");
             }
             Printf("\n");
         }
